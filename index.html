@@ -1,0 +1,326 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <title>PrimeTalk - God-Mode Enterprise Admin Panel | Prime Solutions</title>
+  <meta name="description" content="Unlimited Control Admin Console for PrimeTalk Messenger. Built by Muhammad Nazim at Prime Solutions.">
+  <meta name="author" content="Muhammad Nazim (Prime Solutions)">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-main: #0b141a;
+      --sidebar-bg: #111b21;
+      --card-bg: #202c33;
+      --primary: #00a884;
+      --text-main: #e9edef;
+      --text-muted: #8696a0;
+      --border-color: #222d34;
+      --danger: #ef4444;
+      --accent-badge: #00d25b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    
+    html, body { background-color: var(--bg-main); color: var(--text-main); height: 100%; width: 100%; }
+
+    .admin-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11, 20, 26, 0.95); z-index: 9999;
+      display: flex; justify-content: center; align-items: center; padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--card-bg); color: var(--text-main);
+      width: 100%; max-width: 400px; border-radius: 20px; padding: 28px;
+      border: 1px solid var(--border-color); box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 12px; border: 1px solid var(--border-color); background: var(--sidebar-bg); color: var(--text-main); border-radius: 10px; font-size: 0.9rem; outline: none;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+    
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.9; }
+    .btn-google { background: #ea4335; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-danger { background: var(--danger); }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; width: auto; }
+    .hidden { display: none !important; }
+
+    .admin-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 25px;
+    }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;
+    }
+    .stat-card {
+      background: var(--card-bg); padding: 18px; border-radius: 14px; border: 1px solid var(--border-color);
+    }
+    .stat-card h3 { font-size: 1.8rem; color: var(--primary); margin-top: 5px; }
+
+    .section-box {
+      background: var(--card-bg); padding: 20px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 25px;
+    }
+    .section-box h2 { font-size: 1.1rem; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+    .table-container { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    th, td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+    th { color: var(--text-muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Secure Login Modal -->
+  <div id="admin-login-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 2.5rem; color: var(--primary); margin-bottom: 5px;"><i class="fa-solid fa-crown"></i></div>
+        <h2 style="font-size: 1.3rem;">God-Mode Admin Login</h2>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">Restricted for Muhammad Nazim</p>
+      </div>
+
+      <button id="admin-google-btn" class="btn btn-google"><i class="fa-brands fa-google"></i> Login with Google</button>
+      <div style="text-align: center; margin: 12px 0; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">OR EMAIL LOGIN</div>
+
+      <form id="admin-login-form">
+        <div class="form-group"><label>Admin Email</label><input type="email" id="admin-email" required value="nazimkhan01124@gmail.com"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="admin-password" required placeholder="••••••••"></div>
+        <button type="submit" class="btn">Authorize God-Mode</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard Container -->
+  <div id="admin-dashboard" class="admin-container hidden">
+    <div class="admin-header">
+      <div>
+        <h1 style="font-size: 1.5rem; color: var(--primary);"><i class="fa-solid fa-crown"></i> PrimeTalk God-Mode Console</h1>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Prime Solutions | Muhammad Nazim</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-sm" style="background:#3b82f6;" onclick="exportFullDatabase()"><i class="fa-solid fa-download"></i> Backup DB</button>
+        <button class="btn btn-sm btn-danger" onclick="adminSignOut()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+      </div>
+    </div>
+
+    <!-- Quick Stats Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Total Users</span>
+        <h3 id="stat-total-users">0</h3>
+      </div>
+      <div class="stat-card">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Secure Groups</span>
+        <h3 id="stat-total-groups">0</h3>
+      </div>
+      <div class="stat-card">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">System Status</span>
+        <h3 style="color:var(--accent-badge); font-size:1.2rem; margin-top:10px;"><i class="fa-solid fa-shield-halved"></i> Secured</h3>
+      </div>
+    </div>
+
+    <!-- Global Broadcast Announcement Section -->
+    <div class="section-box">
+      <h2><i class="fa-solid fa-bullhorn"></i> Global Platform Broadcast Announcement</h2>
+      <div class="form-group">
+        <textarea id="broadcast-msg-input" rows="2" placeholder="Type urgent global announcement for all app users..."></textarea>
+      </div>
+      <button class="btn btn-sm" style="width:auto;" onclick="sendGlobalBroadcast()">Broadcast Now</button>
+    </div>
+
+    <!-- Users Management Section -->
+    <div class="section-box">
+      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>VIP Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-table-body">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Groups Management Section -->
+    <div class="section-box">
+      <h2><i class="fa-solid fa-users-rectangle"></i> Secure Groups Control</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Group ID</th>
+              <th>Group Name</th>
+              <th>Owner UID</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-groups-table-body">
+            <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading groups...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, remove, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBdthYAmw8h_buzaeijMzzoUkZI-fKnvBY",
+      authDomain: "primetalk-a7094.firebaseapp.com",
+      databaseURL: "https://primetalk-a7094-default-rtdb.firebaseio.com",
+      projectId: "primetalk-a7094",
+      storageBucket: "primetalk-a7094.firebasestorage.app",
+      messagingSenderId: "948772771243",
+      appId: "1:948772771243:web:1a2b49236bcf6958daaeee",
+      measurementId: "G-084V2CM9TY"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    const ADMIN_EMAIL = "nazimkhan01124@gmail.com"; 
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        if (user.email === ADMIN_EMAIL) {
+          document.getElementById('admin-login-modal').classList.add('hidden');
+          document.getElementById('admin-dashboard').classList.remove('hidden');
+          loadAdminDashboardData();
+        } else {
+          alert("Access Denied: Only authorized God-Mode admin can access.");
+          signOut(auth);
+        }
+      } else {
+        document.getElementById('admin-login-modal').classList.remove('hidden');
+        document.getElementById('admin-dashboard').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('admin-google-btn').addEventListener('click', async () => {
+      try { await signInWithPopup(auth, googleProvider); } catch (err) { alert("Error: " + err.message); }
+    });
+
+    document.getElementById('admin-login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value.trim();
+      const pass = document.getElementById('admin-password').value;
+      try { await signInWithEmailAndPassword(auth, email, pass); } catch (err) { alert("Login Failed: " + err.message); }
+    });
+
+    window.adminSignOut = function() { signOut(auth).then(() => location.reload()); };
+
+    async function loadAdminDashboardData() {
+      const usersSnap = await get(ref(db, 'users/'));
+      const usersTable = document.getElementById('admin-users-table-body');
+      usersTable.innerHTML = '';
+      if(usersSnap.exists()) {
+        const users = usersSnap.val();
+        document.getElementById('stat-total-users').innerText = Object.keys(users).length;
+        Object.values(users).forEach(u => {
+          const isVip = u.isVip ? '<span style="color:var(--accent-badge);">⭐ VIP Verified</span>' : 'Standard';
+          usersTable.innerHTML += `
+            <tr>
+              <td><strong>${escapeHTML(u.name || '')}</strong></td>
+              <td>@${escapeHTML(u.username || '')}</td>
+              <td>${escapeHTML(u.email || '')}</td>
+              <td>${isVip}</td>
+              <td>
+                <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="toggleVipStatus('${u.uid}', ${!u.isVip})">Toggle VIP</button>
+                ${u.email === ADMIN_EMAIL ? '<span style="color:var(--primary); font-size:0.75rem;">Owner</span>' : `<button class="btn btn-sm btn-danger" onclick="deleteUserAccount('${u.uid}')">Delete</button>`}
+              </td>
+            </tr>`;
+        });
+      }
+
+      const groupsSnap = await get(ref(db, 'groups/'));
+      const groupsTable = document.getElementById('admin-groups-table-body');
+      groupsTable.innerHTML = '';
+      if(groupsSnap.exists()) {
+        const groups = groupsSnap.val();
+        document.getElementById('stat-total-groups').innerText = Object.keys(groups).length;
+        Object.values(groups).forEach(g => {
+          groupsTable.innerHTML += `
+            <tr>
+              <td>${g.id}</td>
+              <td><strong>${escapeHTML(g.name || '')}</strong></td>
+              <td>${g.ownerUid || 'N/A'}</td>
+              <td><button class="btn btn-sm btn-danger" onclick="deleteAdminGroup('${g.id}')">Delete</button></td>
+            </tr>`;
+        });
+      } else {
+        groupsTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No active groups found.</td></tr>`;
+      }
+    }
+
+    window.toggleVipStatus = async function(uid, makeVip) {
+      await update(ref(db, `users/${uid}`), { isVip: makeVip });
+      alert(makeVip ? 'User upgraded to VIP Verified!' : 'VIP status removed.');
+      loadAdminDashboardData();
+    };
+
+    window.sendGlobalBroadcast = async function() {
+      const text = document.getElementById('broadcast-msg-input').value.trim();
+      if(!text) return;
+      await set(ref(db, 'global_announcement'), { text, timestamp: Date.now() });
+      alert('Global broadcast announcement sent to all users successfully!');
+      document.getElementById('broadcast-msg-input').value = '';
+    };
+
+    window.exportFullDatabase = async function() {
+      const snap = await get(ref(db, '/'));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(snap.val() || {}, null, 2));
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `PrimeTalk_Full_GodMode_Backup_${Date.now()}.json`);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      alert('Full Database backup downloaded successfully!');
+    };
+
+    window.deleteUserAccount = async function(uid) {
+      if(confirm("Permanently delete this user?")) {
+        await remove(ref(db, `users/${uid}`));
+        alert("User deleted.");
+        loadAdminDashboardData();
+      }
+    };
+
+    window.deleteAdminGroup = async function(groupId) {
+      if(confirm("Permanently delete this secure group?")) {
+        await remove(ref(db, `groups/${groupId}`));
+        await remove(ref(db, `group_members/${groupId}`));
+        await remove(ref(db, `group_messages/${groupId}`));
+        alert("Group deleted.");
+        loadAdminDashboardData();
+      }
+    };
+
+    function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)); }
+  </script>
+</body>
+</html>
