@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -86,14 +87,14 @@
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="font-size: 2.5rem; color: var(--primary); margin-bottom: 5px;"><i class="fa-solid fa-crown"></i></div>
         <h2 style="font-size: 1.3rem;">Supreme God-Mode Login</h2>
-        <p style="font-size: 0.75rem; color: var(--text-muted);">Restricted for Muhammad Nazim</p>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">Restricted Admin Access</p>
       </div>
 
       <button id="admin-google-btn" class="btn btn-google"><i class="fa-brands fa-google"></i> Login with Google</button>
       <div style="text-align: center; margin: 12px 0; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">OR EMAIL LOGIN</div>
 
       <form id="admin-login-form">
-        <div class="form-group"><label>Admin Email</label><input type="email" id="admin-email" required value="nazimkhan01124@gmail.com"></div>
+        <div class="form-group"><label>Admin Email</label><input type="email" id="admin-email" required placeholder="admin@domain.com"></div>
         <div class="form-group"><label>Password</label><input type="password" id="admin-password" required placeholder="••••••••"></div>
         <button type="submit" class="btn">Authorize God-Mode</button>
       </form>
@@ -104,8 +105,8 @@
   <div id="admin-dashboard" class="admin-container hidden">
     <div class="admin-header">
       <div>
-        <h1 style="font-size: 1.5rem; color: var(--primary);"><i class="fa-solid fa-crown"></i> PrimeTalk Supreme Console[span_1](start_span)[span_1](end_span)</h1>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Prime Solutions | Muhammad Nazim[span_2](start_span)[span_2](end_span)</p>
+        <h1 style="font-size: 1.5rem; color: var(--primary);"><i class="fa-solid fa-crown"></i> PrimeTalk Supreme Console</h1>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Prime Solutions | Admin Console</p>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-sm" style="background:#3b82f6;" onclick="exportFullDatabase()"><i class="fa-solid fa-download"></i> Backup DB</button>
@@ -153,7 +154,7 @@
 
     <!-- Global Broadcast Announcement Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-bullhorn"></i> Global Platform Broadcast Announcement[span_3](start_span)[span_3](end_span)</h2>
+      <h2><i class="fa-solid fa-bullhorn"></i> Global Platform Broadcast Announcement</h2>
       <div class="form-group">
         <textarea id="broadcast-msg-input" rows="2" placeholder="Type urgent global announcement for all app users..."></textarea>
       </div>
@@ -162,7 +163,7 @@
 
     <!-- VIP Requests Manual Approval Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-circle-check" style="color:var(--primary);"></i> VIP Requests Manual Approval Queue[span_4](start_span)[span_4](end_span)</h2>
+      <h2><i class="fa-solid fa-circle-check" style="color:var(--primary);"></i> VIP Requests Manual Approval Queue</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -183,7 +184,7 @@
 
     <!-- Reported Content & Spam Queue -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-flag"></i> Reported Content & Spam Queue[span_5](start_span)[span_5](end_span)</h2>
+      <h2><i class="fa-solid fa-flag"></i> Reported Content & Spam Queue</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -203,7 +204,7 @@
 
     <!-- Users Management Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC, Ban & Unban)[span_6](start_span)[span_6](end_span)</h2>
+      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC, Ban & Unban)</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -224,7 +225,7 @@
 
     <!-- Groups Management Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-users-rectangle"></i> Secure Groups Control[span_7](start_span)[span_7](end_span)</h2>
+      <h2><i class="fa-solid fa-users-rectangle"></i> Secure Groups Control</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -265,24 +266,18 @@
     const db = getDatabase(app);
     const googleProvider = new GoogleAuthProvider();
 
-    const ADMIN_EMAIL = "nazimkhan01124@gmail.com"; 
     let currentMaintenanceState = false;
     let bannedUsersMap = {};
 
     onAuthStateChanged(auth, user => {
       if (user) {
-        if (user.email === ADMIN_EMAIL) {
-          document.getElementById('admin-login-modal').classList.add('hidden');
-          document.getElementById('admin-dashboard').classList.remove('hidden');
-          loadBannedUsersList();
-          loadAdminDashboardData();
-          checkMaintenanceStatus();
-          loadVipRequestsQueue();
-          loadReportsQueue();
-        } else {
-          alert("Access Denied: Only authorized Supreme Admin can access.");
-          signOut(auth);
-        }
+        document.getElementById('admin-login-modal').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadBannedUsersList();
+        loadAdminDashboardData();
+        checkMaintenanceStatus();
+        loadVipRequestsQueue();
+        loadReportsQueue();
       } else {
         document.getElementById('admin-login-modal').classList.remove('hidden');
         document.getElementById('admin-dashboard').classList.add('hidden');
@@ -357,14 +352,14 @@
         if(reqs) {
           Object.keys(reqs).forEach(rKey => {
             const req = reqs[rKey];
-            if(req.status === 'pending') {
+            if(req.status === 'Pending' || req.status === 'pending') {
               found = true;
               tbody.innerHTML += `
                 <tr>
                   <td><strong>${escapeHTML(req.name || '')}</strong></td>
                   <td>@${escapeHTML(req.username || '')}</td>
-                  <td>${escapeHTML(req.method)}: ${escapeHTML(req.senderAcc)}</td>
-                  <td><strong style="color:var(--primary);">${escapeHTML(req.tid)}</strong></td>
+                  <td>${escapeHTML(req.method || '')}: ${escapeHTML(req.senderAcc || '')}</td>
+                  <td><strong style="color:var(--primary);">${escapeHTML(req.tid || '')}</strong></td>
                   <td>
                     <button class="btn btn-sm" style="background:#25d366; margin-right:4px;" onclick="approveVipRequest('${rKey}', '${req.uid}')">Approve</button>
                     <button class="btn btn-sm btn-danger" onclick="rejectVipRequest('${rKey}')">Reject</button>
@@ -381,12 +376,12 @@
 
     window.approveVipRequest = async function(reqKey, targetUid) {
       await update(ref(db, `users/${targetUid}`), { isVip: true });
-      await update(ref(db, `vip_requests/${reqKey}`), { status: 'approved' });
+      await update(ref(db, `vip_requests/${reqKey}`), { status: 'Approved' });
       alert('VIP badge approved successfully!');
     };
 
     window.rejectVipRequest = async function(reqKey) {
-      await update(ref(db, `vip_requests/${reqKey}`), { status: 'rejected' });
+      await update(ref(db, `vip_requests/${reqKey}`), { status: 'Rejected' });
       alert('VIP request rejected.');
     };
 
@@ -401,8 +396,8 @@
             tbody.innerHTML += `
               <tr>
                 <td>${rKey.substring(0,6)}...</td>
-                <td>${r.reporterUid}</td>
-                <td>${escapeHTML(r.reason)} <br><span style="font-size:0.7rem; color:var(--text-muted);">Target: ${r.targetUid}</span></td>
+                <td>${r.reporterUid || ''}</td>
+                <td>${escapeHTML(r.reason || '')} <br><span style="font-size:0.7rem; color:var(--text-muted);">Target: ${r.targetUid || ''}</span></td>
                 <td><button class="btn btn-sm btn-danger" onclick="dismissReport('${rKey}')">Dismiss</button></td>
               </tr>`;
           });
@@ -446,7 +441,12 @@
                 </td>
               </tr>`;
           });
+        } else {
+          usersTable.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No users found in database.</td></tr>`;
         }
+      }, err => {
+        console.error("Firebase read error:", err);
+        document.getElementById('admin-users-table-body').innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger);">Permission Denied / Database Error. Check Firebase Rules!</td></tr>`;
       });
 
       onValue(ref(db, 'groups'), snap => {
@@ -458,7 +458,7 @@
           Object.values(groups).forEach(g => {
             groupsTable.innerHTML += `
               <tr>
-                <td>${g.id}</td>
+                <td>${g.id || ''}</td>
                 <td><strong>${escapeHTML(g.name || '')}</strong></td>
                 <td>${g.ownerUid || 'N/A'}</td>
                 <td><button class="btn btn-sm btn-danger" onclick="deleteAdminGroup('${g.id}')">Delete</button></td>
