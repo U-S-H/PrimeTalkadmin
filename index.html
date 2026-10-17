@@ -203,7 +203,7 @@
 
     <!-- Users Management Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC & Ban)</h2>
+      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC, Ban & Unban)</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -267,12 +267,14 @@
 
     const ADMIN_EMAIL = "nazimkhan01124@gmail.com"; 
     let currentMaintenanceState = false;
+    let bannedUsersMap = {};
 
     onAuthStateChanged(auth, user => {
       if (user) {
         if (user.email === ADMIN_EMAIL) {
           document.getElementById('admin-login-modal').classList.add('hidden');
           document.getElementById('admin-dashboard').classList.remove('hidden');
+          loadBannedUsersList();
           loadAdminDashboardData();
           checkMaintenanceStatus();
           loadVipRequestsQueue();
@@ -338,6 +340,13 @@
       alert('Push notification alert dispatched to active sessions!');
       document.getElementById('push-notification-text').value = '';
     };
+
+    function loadBannedUsersList() {
+      onValue(ref(db, 'bans'), snap => {
+        bannedUsersMap = snap.val() || {};
+        loadAdminDashboardData();
+      });
+    }
 
     function loadVipRequestsQueue() {
       onValue(ref(db, 'vip_requests'), snap => {
@@ -418,15 +427,22 @@
           Object.values(users).forEach(u => {
             const isVip = u.isVip ? '<span style="color:var(--accent-badge);">⭐ VIP</span>' : 'Standard';
             const roleStr = u.role === 'admin' ? '<span style="color:var(--primary);">Admin</span>' : 'User';
+            const isBanned = bannedUsersMap[u.uid] && bannedUsersMap[u.uid].banned;
+            
+            const statusBadge = isBanned ? '<span style="color:var(--danger); font-weight:bold;">[BANNED]</span>' : `${roleStr} | ${isVip}`;
+            const banUnbanBtn = isBanned ? 
+              `<button class="btn btn-sm" style="background:#25d366;" onclick="unbanUserAccount('${u.uid}')">Unban</button>` : 
+              `<button class="btn btn-sm btn-danger" onclick="banUserAccount('${u.uid}')">Ban</button>`;
+
             usersTable.innerHTML += `
               <tr>
                 <td><strong>${escapeHTML(u.name || '')}</strong></td>
                 <td>@${escapeHTML(u.username || '')}</td>
                 <td>${escapeHTML(u.email || '')}</td>
-                <td>${roleStr} | ${isVip}</td>
+                <td>${statusBadge}</td>
                 <td>
                   <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="promoteUserRole('${u.uid}', '${u.role === 'admin' ? 'user' : 'admin'}')">${u.role === 'admin' ? 'Demote' : 'Make Admin'}</button>
-                  <button class="btn btn-sm btn-danger" onclick="banUserAccount('${u.uid}')">Ban</button>
+                  ${banUnbanBtn}
                 </td>
               </tr>`;
           });
@@ -463,6 +479,13 @@
       if(confirm('Are you sure you want to ban this user?')) {
         await set(ref(db, `bans/${uid}`), { banned: true });
         alert('User has been banned.');
+      }
+    };
+
+    window.unbanUserAccount = async function(uid) {
+      if(confirm('Are you sure you want to unban this user?')) {
+        await remove(ref(db, `bans/${uid}`));
+        alert('User has been unbanned successfully!');
       }
     };
 
