@@ -21,6 +21,7 @@
       --border-color: #222d34;
       --danger: #ef4444;
       --accent-badge: #00d25b;
+      --vip-gold: #f59e0b;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -101,16 +102,46 @@
     </div>
   </div>
 
-  <!-- Edit User VIP Modal -->
-  <div id="edit-user-vip-modal" class="modal-overlay hidden">
+  <!-- Manual VIP Request Details View Modal -->
+  <div id="view-vip-details-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="color:var(--primary);"><i class="fa-solid fa-crown"></i> Configure User VIP</h3>
-        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem;" onclick="closeModal('edit-user-vip-modal')"></i>
+        <h3 style="color:var(--vip-gold);"><i class="fa-solid fa-receipt"></i> VIP Purchase Details</h3>
+        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem;" onclick="closeModal('view-vip-details-modal')"></i>
       </div>
-      <p id="modal-target-username" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;"></p>
       
-      <input type="hidden" id="modal-target-uid">
+      <div style="background:var(--sidebar-bg); padding:15px; border-radius:12px; font-size:0.85rem; line-height:1.6; border:1px solid var(--border-color); margin-bottom:15px;">
+        <div>👤 <strong>User Name:</strong> <span id="det-name"></span></div>
+        <div>🏷️ <strong>Username:</strong> <span id="det-username"></span></div>
+        <div>👑 <strong>Selected Plan:</strong> <span id="det-plan" style="color:var(--vip-gold);"></span></div>
+        <div>💰 <strong>Amount:</strong> <span id="det-amount"></span></div>
+        <div>💳 <strong>Payment Method:</strong> <span id="det-method"></span></div>
+        <div>📱 <strong>Sender Account:</strong> <span id="det-sender"></span></div>
+        <div>#️⃣ <strong>Transaction TID:</strong> <span id="det-tid" style="color:var(--primary); font-weight:bold;"></span></div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn" style="background:#25d366;" id="modal-approve-btn">Approve & Assign VIP</button>
+        <button class="btn btn-danger" id="modal-reject-btn">Reject Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Wallet & VIP Modal -->
+  <div id="edit-user-wallet-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="color:var(--primary);"><i class="fa-solid fa-wallet"></i> Manage User Wallet & VIP</h3>
+        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem;" onclick="closeModal('edit-user-wallet-modal')"></i>
+      </div>
+      <p id="wallet-target-username" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;"></p>
+      
+      <input type="hidden" id="wallet-target-uid">
+
+      <div class="form-group">
+        <label>Direct Wallet Balance / Credits ($)</label>
+        <input type="number" id="modal-user-wallet" step="0.01" placeholder="0.00">
+      </div>
 
       <div class="form-group">
         <label>VIP Status</label>
@@ -121,25 +152,16 @@
       </div>
 
       <div class="form-group">
-        <label>VIP Level</label>
+        <label>VIP Level & Frame</label>
         <select id="modal-vip-level">
-          <option value="1">Level 1 (Basic VIP)</option>
-          <option value="2">Level 2 (Advanced)</option>
-          <option value="3">Level 3 (Pro)</option>
+          <option value="1">Level 1 (Gold Frame)</option>
+          <option value="2">Level 2 (Diamond Frame)</option>
+          <option value="3">Level 3 (Fire Frame)</option>
           <option value="5">Level 5 (Elite Crown)</option>
         </select>
       </div>
 
-      <div class="form-group">
-        <label>VIP Profile Frame</label>
-        <select id="modal-vip-frame">
-          <option value="frame-gold">Gold Frame 🌟</option>
-          <option value="frame-diamond">Diamond Frame 💎</option>
-          <option value="frame-fire">Fire Frame 🔥</option>
-        </select>
-      </div>
-
-      <button class="btn" onclick="saveUserVipSettings()">Save VIP Settings</button>
+      <button class="btn" onclick="saveUserWalletAndVipSettings()">Save Changes</button>
     </div>
   </div>
 
@@ -172,7 +194,7 @@
       </div>
     </div>
 
-    <!-- App Maintenance Mode & Push Notifications -->
+    <!-- App Maintenance Mode & Targeted Broadcasts -->
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
       
       <div class="section-box">
@@ -185,22 +207,20 @@
       </div>
 
       <div class="section-box">
-        <h2><i class="fa-solid fa-bell"></i> Push Notification Sender</h2>
-        <div class="form-group" style="margin-bottom:8px;">
-          <input type="text" id="push-notification-text" placeholder="Type instant notification alert...">
+        <h2><i class="fa-solid fa-bullhorn"></i> Targeted Broadcast Announcement</h2>
+        <div class="form-group" style="margin-bottom:6px;">
+          <select id="broadcast-target-audience">
+            <option value="all">All Users</option>
+            <option value="vip">VIP Members Only</option>
+            <option value="normal">Standard Users Only</option>
+          </select>
         </div>
-        <button class="btn btn-sm" style="width:100%;" onclick="sendPushNotificationAlert()">Send Alert</button>
+        <div class="form-group" style="margin-bottom:8px;">
+          <input type="text" id="targeted-broadcast-text" placeholder="Type announcement message...">
+        </div>
+        <button class="btn btn-sm" style="width:100%;" onclick="sendTargetedBroadcast()">Send Broadcast</button>
       </div>
 
-    </div>
-
-    <!-- Global Broadcast Announcement Section -->
-    <div class="section-box">
-      <h2><i class="fa-solid fa-bullhorn"></i> Global Platform Broadcast Announcement</h2>
-      <div class="form-group">
-        <textarea id="broadcast-msg-input" rows="2" placeholder="Type urgent global announcement for all app users..."></textarea>
-      </div>
-      <button class="btn btn-sm" style="width:auto;" onclick="sendGlobalBroadcast()">Broadcast Now</button>
     </div>
 
     <!-- VIP Requests Manual Approval Section -->
@@ -211,10 +231,10 @@
           <thead>
             <tr>
               <th>User Name</th>
-              <th>Username</th>
-              <th>Method & Account</th>
-              <th>Transaction TID</th>
-              <th>Action</th>
+              <th>Selected Plan & Amount</th>
+              <th>Method & TID</th>
+              <th>Status</th>
+              <th>Action / Details</th>
             </tr>
           </thead>
           <tbody id="admin-vip-requests-table-body">
@@ -246,15 +266,15 @@
 
     <!-- Users Management Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC, VIP & Banning)</h2>
+      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (Wallet, VIP & Banning)</h2>
       <div class="table-container">
         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>Username</th>
-              <th>Email</th>
-              <th>Role & Status</th>
+              <th>Wallet / Status</th>
+              <th>Role</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -279,7 +299,7 @@
             </tr>
           </thead>
           <tbody id="admin-groups-table-body">
-            <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading groups...</td></tr>
+            <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading active groups.</td></tr>
           </tbody>
         </table>
       </div>
@@ -311,7 +331,7 @@
     let currentMaintenanceState = false;
     let bannedUsersMap = {};
 
-    window.openModal = id => document.getElementById(id).classList.remove('hidden');
+    window.openModal = id => document.getElementById(id).classList.add('hidden') === false ? document.getElementById(id).classList.remove('hidden') : document.getElementById(id).classList.remove('hidden');
     window.closeModal = id => document.getElementById(id).classList.add('hidden');
 
     onAuthStateChanged(auth, user => {
@@ -373,12 +393,13 @@
       alert(currentMaintenanceState ? 'Maintenance mode enabled! App is now locked for users.' : 'Maintenance mode disabled.');
     };
 
-    window.sendPushNotificationAlert = async function() {
-      const text = document.getElementById('push-notification-text').value.trim();
+    window.sendTargetedBroadcast = async function() {
+      const text = document.getElementById('targeted-broadcast-text').value.trim();
+      const target = document.getElementById('broadcast-target-audience').value;
       if(!text) return;
-      await set(ref(db, 'system_alert'), { text, timestamp: Date.now() });
-      alert('Push notification alert dispatched to active sessions!');
-      document.getElementById('push-notification-text').value = '';
+      await set(ref(db, 'global_announcement'), { text, target, timestamp: Date.now() });
+      alert(`Targeted broadcast sent successfully to [${target.toUpperCase()}]!`);
+      document.getElementById('targeted-broadcast-text').value = '';
     };
 
     function loadBannedUsersList() {
@@ -397,33 +418,65 @@
         if(reqs) {
           Object.keys(reqs).forEach(rKey => {
             const req = reqs[rKey];
-            if(req.status === 'Pending' || req.status === 'pending') {
-              found = true;
-              tbody.innerHTML += `
-                <tr>
-                  <td><strong>${escapeHTML(req.name || '')}</strong></td>
-                  <td>@${escapeHTML(req.username || '')}</td>
-                  <td>${escapeHTML(req.method || '')}: ${escapeHTML(req.senderAcc || '')}</td>
-                  <td><strong style="color:var(--primary);">${escapeHTML(req.tid || '')}</strong></td>
-                  <td>
-                    <button class="btn btn-sm" style="background:#25d366; margin-right:4px;" onclick="approveVipRequest('${rKey}', '${req.uid}')">Approve</button>
-                    <button class="btn btn-sm btn-danger" onclick="rejectVipRequest('${rKey}')">Reject</button>
-                  </td>
-                </tr>`;
-            }
+            found = true;
+            let statusColor = req.status === 'Approved' ? '#25d366' : (req.status === 'Rejected' ? '#ef4444' : '#f59e0b');
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${escapeHTML(req.name || '')}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">@${escapeHTML(req.username || '')}</span></td>
+                <td>${escapeHTML(req.plan || 'VIP Plan')} <br><strong style="color:var(--primary);">${escapeHTML(req.amount || '')}</strong></td>
+                <td>${escapeHTML(req.method || '')}: <strong>${escapeHTML(req.tid || '')}</strong></td>
+                <td><span style="color:${statusColor}; font-weight:bold;">${req.status || 'Pending'}</span></td>
+                <td>
+                  <button class="btn btn-sm" style="background:#3b82f6; margin-bottom:4px;" onclick='viewVipDetails(${JSON.stringify(req).replace(/'/g, "&#39;")}, "${rKey}")'><i class="fa-solid fa-eye"></i> Details</button>
+                  ${(req.status === 'Pending' || !req.status) ? `<div style="display:flex; gap:4px;"><button class="btn btn-sm" style="background:#25d366;" onclick="approveVipRequest('${rKey}', '${req.uid}', '${escapeHTML(req.plan || '')}')">Approve</button><button class="btn btn-sm btn-danger" onclick="rejectVipRequest('${rKey}')">Reject</button></div>` : ''}
+                </td>
+              </tr>`;
           });
         }
         if(!found) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending VIP requests.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No VIP requests found.</td></tr>`;
         }
       });
     }
 
-    window.approveVipRequest = async function(reqKey, targetUid) {
-      const expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000);
-      await update(ref(db, `users/${targetUid}`), { isVip: true, vipLevel: 1, vipFrame: 'frame-gold', vipExpiresAt: expiresAt });
+    window.viewVipDetails = function(req, rKey) {
+      document.getElementById('det-name').innerText = req.name;
+      document.getElementById('det-username').innerText = '@' + req.username;
+      document.getElementById('det-plan').innerText = req.plan;
+      document.getElementById('det-amount').innerText = req.amount;
+      document.getElementById('det-method').innerText = req.method;
+      document.getElementById('det-sender').innerText = req.senderAcc;
+      document.getElementById('det-tid').innerText = req.tid;
+
+      document.getElementById('modal-approve-btn').onclick = function() {
+        approveVipRequest(rKey, req.uid, req.plan);
+        closeModal('view-vip-details-modal');
+      };
+      document.getElementById('modal-reject-btn').onclick = function() {
+        rejectVipRequest(rKey);
+        closeModal('view-vip-details-modal');
+      };
+
+      openModal('view-vip-details-modal');
+    };
+
+    window.approveVipRequest = async function(reqKey, targetUid, planStr) {
+      let durationDays = 30;
+      let vipLevel = 1;
+      let frame = 'frame-gold';
+
+      if(planStr.includes('6 Months')) { durationDays = 180; vipLevel = 2; frame = 'frame-diamond'; }
+      else if(planStr.includes('1 Year')) { durationDays = 365; vipLevel = 3; frame = 'frame-fire'; }
+      else if(planStr.includes('2 Years')) { durationDays = 730; vipLevel = 5; frame = 'frame-gold'; }
+
+      const expiresAt = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+
+      await update(ref(db, `users/${targetUid}`), {
+        isVip: true, accountType: 'vip', vipLevel, vipFrame: frame, vipExpiresAt: expiresAt
+      });
+
       await update(ref(db, `vip_requests/${reqKey}`), { status: 'Approved' });
-      alert('VIP badge approved successfully!');
+      alert('VIP badge and level successfully approved and assigned!');
     };
 
     window.rejectVipRequest = async function(reqKey) {
@@ -469,6 +522,7 @@
             const isVip = u.isVip ? `<span style="color:var(--accent-badge);">⭐ VIP Lvl ${u.vipLevel || 1}</span>` : 'Standard';
             const roleStr = u.role === 'admin' ? '<span style="color:var(--primary);">Admin</span>' : 'User';
             const isBanned = bannedUsersMap[u.uid] && bannedUsersMap[u.uid].banned;
+            const walletBalance = u.walletBalance ? parseFloat(u.walletBalance).toFixed(2) : '0.00';
             
             const statusBadge = isBanned ? '<span style="color:var(--danger); font-weight:bold;">[BANNED]</span>' : `${roleStr} | ${isVip}`;
             const banUnbanBtn = isBanned ? 
@@ -477,12 +531,12 @@
 
             usersTable.innerHTML += `
               <tr>
-                <td><strong>${escapeHTML(u.name || '')}</strong></td>
-                <td>@${escapeHTML(u.username || '')}</td>
+                <td><strong>${escapeHTML(u.name || '')}</strong><br><span style="font-size:0.7rem; color:var(--text-muted);">@${escapeHTML(u.username || '')}</span></td>
                 <td>${escapeHTML(u.email || '')}</td>
-                <td>${statusBadge}</td>
+                <td>Wallet: <strong style="color:var(--primary);">$${walletBalance}</strong><br>${statusBadge}</td>
+                <td>${roleStr}</td>
                 <td>
-                  <button class="btn btn-sm" style="background:#f59e0b; margin-right:4px;" onclick="openEditVipModal('${u.uid}', '${escapeHTML(u.name || '')}', ${u.isVip || false}, ${u.vipLevel || 1}, '${u.vipFrame || 'frame-gold'}')"><i class="fa-solid fa-crown"></i> VIP</button>
+                  <button class="btn btn-sm" style="background:#f59e0b; margin-right:4px;" onclick="openEditWalletModal('${u.uid}', '${escapeHTML(u.name || '')}', ${u.walletBalance || 0}, ${u.isVip || false}, ${u.vipLevel || 1}, '${u.vipFrame || 'frame-gold'}')"><i class="fa-solid fa-wallet"></i> Manage</button>
                   <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="promoteUserRole('${u.uid}', '${u.role === 'admin' ? 'user' : 'admin'}')">${u.role === 'admin' ? 'Demote' : 'Admin'}</button>
                   ${banUnbanBtn}
                 </td>
@@ -491,9 +545,6 @@
         } else {
           usersTable.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No users found in database.</td></tr>`;
         }
-      }, err => {
-        console.error("Firebase read error:", err);
-        document.getElementById('admin-users-table-body').innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger);">Permission Denied / Database Error. Check Firebase Rules!</td></tr>`;
       });
 
       onValue(ref(db, 'groups'), snap => {
@@ -517,28 +568,30 @@
       });
     }
 
-    window.openEditVipModal = function(uid, name, isVip, vipLevel, vipFrame) {
-      document.getElementById('modal-target-uid').value = uid;
-      document.getElementById('modal-target-username').innerText = `Configuring VIP for: ${name}`;
+    window.openEditWalletModal = function(uid, name, walletBalance, isVip, vipLevel, vipFrame) {
+      document.getElementById('wallet-target-uid').value = uid;
+      document.getElementById('wallet-target-username').innerText = `Managing Wallet & VIP for: ${name}`;
+      document.getElementById('modal-user-wallet').value = walletBalance || 0;
       document.getElementById('modal-vip-status').value = isVip ? "true" : "false";
       document.getElementById('modal-vip-level').value = vipLevel || 1;
       document.getElementById('modal-vip-frame').value = vipFrame || 'frame-gold';
-      openModal('edit-user-vip-modal');
+      openModal('edit-user-wallet-modal');
     };
 
-    window.saveUserVipSettings = async function() {
-      const uid = document.getElementById('modal-target-uid').value;
+    window.saveUserWalletAndVipSettings = async function() {
+      const uid = document.getElementById('wallet-target-uid').value;
+      const walletBalance = parseFloat(document.getElementById('modal-user-wallet').value) || 0;
       const isVip = document.getElementById('modal-vip-status').value === "true";
       const vipLevel = parseInt(document.getElementById('modal-vip-level').value);
       const vipFrame = document.getElementById('modal-vip-frame').value;
       const vipExpiresAt = isVip ? Date.now() + (365 * 24 * 60 * 60 * 1000) : 0;
 
       await update(ref(db, `users/${uid}`), {
-        isVip, vipLevel, vipFrame, vipExpiresAt, accountType: isVip ? 'vip' : 'normal'
+        walletBalance, isVip, vipLevel, vipFrame, vipExpiresAt, accountType: isVip ? 'vip' : 'normal'
       });
 
-      alert('User VIP badge, level, and frame updated successfully!');
-      closeModal('edit-user-vip-modal');
+      alert('User wallet balance and VIP settings updated successfully!');
+      closeModal('edit-user-wallet-modal');
     };
 
     window.promoteUserRole = async function(uid, newRole) {
@@ -558,14 +611,6 @@
         await remove(ref(db, `bans/${uid}`));
         alert('User has been unbanned successfully!');
       }
-    };
-
-    window.sendGlobalBroadcast = async function() {
-      const text = document.getElementById('broadcast-msg-input').value.trim();
-      if(!text) return;
-      await set(ref(db, 'global_announcement'), { text, timestamp: Date.now() });
-      alert('Global broadcast announcement sent successfully!');
-      document.getElementById('broadcast-msg-input').value = '';
     };
 
     window.exportFullDatabase = async function() {
