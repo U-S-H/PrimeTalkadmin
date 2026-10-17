@@ -37,7 +37,7 @@
 
     .modal-content {
       background: var(--card-bg); color: var(--text-main);
-      width: 100%; max-width: 400px; border-radius: 20px; padding: 28px;
+      width: 100%; max-width: 420px; border-radius: 20px; padding: 28px;
       border: 1px solid var(--border-color); box-shadow: 0 15px 35px rgba(0,0,0,0.7);
     }
 
@@ -46,7 +46,7 @@
     .form-group input, .form-group textarea, .form-group select {
       width: 100%; padding: 12px; border: 1px solid var(--border-color); background: var(--sidebar-bg); color: var(--text-main); border-radius: 10px; font-size: 0.9rem; outline: none;
     }
-    .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
     
     .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.9; }
@@ -98,6 +98,48 @@
         <div class="form-group"><label>Password</label><input type="password" id="admin-password" required placeholder="••••••••"></div>
         <button type="submit" class="btn">Authorize God-Mode</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Edit User VIP Modal -->
+  <div id="edit-user-vip-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="color:var(--primary);"><i class="fa-solid fa-crown"></i> Configure User VIP</h3>
+        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem;" onclick="closeModal('edit-user-vip-modal')"></i>
+      </div>
+      <p id="modal-target-username" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;"></p>
+      
+      <input type="hidden" id="modal-target-uid">
+
+      <div class="form-group">
+        <label>VIP Status</label>
+        <select id="modal-vip-status">
+          <option value="true">Active VIP</option>
+          <option value="false">Standard User (No VIP)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>VIP Level</label>
+        <select id="modal-vip-level">
+          <option value="1">Level 1 (Basic VIP)</option>
+          <option value="2">Level 2 (Advanced)</option>
+          <option value="3">Level 3 (Pro)</option>
+          <option value="5">Level 5 (Elite Crown)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>VIP Profile Frame</label>
+        <select id="modal-vip-frame">
+          <option value="frame-gold">Gold Frame 🌟</option>
+          <option value="frame-diamond">Diamond Frame 💎</option>
+          <option value="frame-fire">Fire Frame 🔥</option>
+        </select>
+      </div>
+
+      <button class="btn" onclick="saveUserVipSettings()">Save VIP Settings</button>
     </div>
   </div>
 
@@ -204,7 +246,7 @@
 
     <!-- Users Management Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC, Ban & Unban)</h2>
+      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC, VIP & Banning)</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -268,6 +310,9 @@
 
     let currentMaintenanceState = false;
     let bannedUsersMap = {};
+
+    window.openModal = id => document.getElementById(id).classList.remove('hidden');
+    window.closeModal = id => document.getElementById(id).classList.add('hidden');
 
     onAuthStateChanged(auth, user => {
       if (user) {
@@ -375,7 +420,8 @@
     }
 
     window.approveVipRequest = async function(reqKey, targetUid) {
-      await update(ref(db, `users/${targetUid}`), { isVip: true });
+      const expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      await update(ref(db, `users/${targetUid}`), { isVip: true, vipLevel: 1, vipFrame: 'frame-gold', vipExpiresAt: expiresAt });
       await update(ref(db, `vip_requests/${reqKey}`), { status: 'Approved' });
       alert('VIP badge approved successfully!');
     };
@@ -420,7 +466,7 @@
           const users = snap.val();
           document.getElementById('stat-total-users').innerText = Object.keys(users).length;
           Object.values(users).forEach(u => {
-            const isVip = u.isVip ? '<span style="color:var(--accent-badge);">⭐ VIP</span>' : 'Standard';
+            const isVip = u.isVip ? `<span style="color:var(--accent-badge);">⭐ VIP Lvl ${u.vipLevel || 1}</span>` : 'Standard';
             const roleStr = u.role === 'admin' ? '<span style="color:var(--primary);">Admin</span>' : 'User';
             const isBanned = bannedUsersMap[u.uid] && bannedUsersMap[u.uid].banned;
             
@@ -436,7 +482,8 @@
                 <td>${escapeHTML(u.email || '')}</td>
                 <td>${statusBadge}</td>
                 <td>
-                  <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="promoteUserRole('${u.uid}', '${u.role === 'admin' ? 'user' : 'admin'}')">${u.role === 'admin' ? 'Demote' : 'Make Admin'}</button>
+                  <button class="btn btn-sm" style="background:#f59e0b; margin-right:4px;" onclick="openEditVipModal('${u.uid}', '${escapeHTML(u.name || '')}', ${u.isVip || false}, ${u.vipLevel || 1}, '${u.vipFrame || 'frame-gold'}')"><i class="fa-solid fa-crown"></i> VIP</button>
+                  <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="promoteUserRole('${u.uid}', '${u.role === 'admin' ? 'user' : 'admin'}')">${u.role === 'admin' ? 'Demote' : 'Admin'}</button>
                   ${banUnbanBtn}
                 </td>
               </tr>`;
@@ -469,6 +516,30 @@
         }
       });
     }
+
+    window.openEditVipModal = function(uid, name, isVip, vipLevel, vipFrame) {
+      document.getElementById('modal-target-uid').value = uid;
+      document.getElementById('modal-target-username').innerText = `Configuring VIP for: ${name}`;
+      document.getElementById('modal-vip-status').value = isVip ? "true" : "false";
+      document.getElementById('modal-vip-level').value = vipLevel || 1;
+      document.getElementById('modal-vip-frame').value = vipFrame || 'frame-gold';
+      openModal('edit-user-vip-modal');
+    };
+
+    window.saveUserVipSettings = async function() {
+      const uid = document.getElementById('modal-target-uid').value;
+      const isVip = document.getElementById('modal-vip-status').value === "true";
+      const vipLevel = parseInt(document.getElementById('modal-vip-level').value);
+      const vipFrame = document.getElementById('modal-vip-frame').value;
+      const vipExpiresAt = isVip ? Date.now() + (365 * 24 * 60 * 60 * 1000) : 0;
+
+      await update(ref(db, `users/${uid}`), {
+        isVip, vipLevel, vipFrame, vipExpiresAt, accountType: isVip ? 'vip' : 'normal'
+      });
+
+      alert('User VIP badge, level, and frame updated successfully!');
+      closeModal('edit-user-vip-modal');
+    };
 
     window.promoteUserRole = async function(uid, newRole) {
       await update(ref(db, `users/${uid}`), { role: newRole });
