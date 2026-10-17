@@ -160,6 +160,27 @@
       <button class="btn btn-sm" style="width:auto;" onclick="sendGlobalBroadcast()">Broadcast Now</button>
     </div>
 
+    <!-- VIP Requests Manual Approval Section -->
+    <div class="section-box">
+      <h2><i class="fa-solid fa-circle-check" style="color:var(--primary);"></i> VIP Requests Manual Approval Queue</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Username</th>
+              <th>Method & Account</th>
+              <th>Transaction TID</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-vip-requests-table-body">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending VIP requests.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Reported Content & Spam Queue -->
     <div class="section-box">
       <h2><i class="fa-solid fa-flag"></i> Reported Content & Spam Queue</h2>
@@ -168,8 +189,8 @@
           <thead>
             <tr>
               <th>Report ID</th>
-              <th>Reporter</th>
-              <th>Reason / Content</th>
+              <th>Reporter UID</th>
+              <th>Reason / Target User ID</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -182,7 +203,7 @@
 
     <!-- Users Management Section -->
     <div class="section-box">
-      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control</h2>
+      <h2><i class="fa-solid fa-users"></i> Unlimited Users Control (RBAC & Ban)</h2>
       <div class="table-container">
         <table>
           <thead>
@@ -190,7 +211,7 @@
               <th>Name</th>
               <th>Username</th>
               <th>Email</th>
-              <th>VIP Status</th>
+              <th>Role & Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -226,7 +247,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, remove, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, remove, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBdthYAmw8h_buzaeijMzzoUkZI-fKnvBY",
@@ -254,6 +275,8 @@
           document.getElementById('admin-dashboard').classList.remove('hidden');
           loadAdminDashboardData();
           checkMaintenanceStatus();
+          loadVipRequestsQueue();
+          loadReportsQueue();
         } else {
           alert("Access Denied: Only authorized Supreme Admin can access.");
           signOut(auth);
@@ -316,53 +339,131 @@
       document.getElementById('push-notification-text').value = '';
     };
 
-    async function loadAdminDashboardData() {
-      const usersSnap = await get(ref(db, 'users/'));
-      const usersTable = document.getElementById('admin-users-table-body');
-      usersTable.innerHTML = '';
-      if(usersSnap.exists()) {
-        const users = usersSnap.val();
-        document.getElementById('stat-total-users').innerText = Object.keys(users).length;
-        Object.values(users).forEach(u => {
-          const isVip = u.isVip ? '<span style="color:var(--accent-badge);">⭐ VIP Verified</span>' : 'Standard';
-          usersTable.innerHTML += `
-            <tr>
-              <td><strong>${escapeHTML(u.name || '')}</strong></td>
-              <td>@${escapeHTML(u.username || '')}</td>
-              <td>${escapeHTML(u.email || '')}</td>
-              <td>${isVip}</td>
-              <td>
-                <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="toggleVipStatus('${u.uid}', ${!u.isVip})">Toggle VIP</button>
-                ${u.email === ADMIN_EMAIL ? '<span style="color:var(--primary); font-size:0.75rem;">Owner</span>' : `<button class="btn btn-sm btn-danger" onclick="deleteUserAccount('${u.uid}')">Delete</button>`}
-              </td>
-            </tr>`;
-        });
-      }
-
-      const groupsSnap = await get(ref(db, 'groups/'));
-      const groupsTable = document.getElementById('admin-groups-table-body');
-      groupsTable.innerHTML = '';
-      if(groupsSnap.exists()) {
-        const groups = groupsSnap.val();
-        document.getElementById('stat-total-groups').innerText = Object.keys(groups).length;
-        Object.values(groups).forEach(g => {
-          groupsTable.innerHTML += `
-            <tr>
-              <td>${g.id}</td>
-              <td><strong>${escapeHTML(g.name || '')}</strong></td>
-              <td>${g.ownerUid || 'N/A'}</td>
-              <td><button class="btn btn-sm btn-danger" onclick="deleteAdminGroup('${g.id}')">Delete</button></td>
-            </tr>`;
-        });
-      } else {
-        groupsTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No active groups found.</td></tr>`;
-      }
+    function loadVipRequestsQueue() {
+      onValue(ref(db, 'vip_requests'), snap => {
+        const reqs = snap.val();
+        const tbody = document.getElementById('admin-vip-requests-table-body');
+        tbody.innerHTML = '';
+        let found = false;
+        if(reqs) {
+          Object.keys(reqs).forEach(rKey => {
+            const req = reqs[rKey];
+            if(req.status === 'pending') {
+              found = true;
+              tbody.innerHTML += `
+                <tr>
+                  <td><strong>${escapeHTML(req.name || '')}</strong></td>
+                  <td>@${escapeHTML(req.username || '')}</td>
+                  <td>${escapeHTML(req.method)}: ${escapeHTML(req.senderAcc)}</td>
+                  <td><strong style="color:var(--primary);">${escapeHTML(req.tid)}</strong></td>
+                  <td>
+                    <button class="btn btn-sm" style="background:#25d366; margin-right:4px;" onclick="approveVipRequest('${rKey}', '${req.uid}')">Approve</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectVipRequest('${rKey}')">Reject</button>
+                  </td>
+                </tr>`;
+            }
+          });
+        }
+        if(!found) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending VIP requests.</td></tr>`;
+        }
+      });
     }
 
-    window.toggleVipStatus = async function(uid, makeVip) {
-      await update(ref(db, `users/${uid}`), { isVip: makeVip });
-      alert(makeVip ? 'User upgraded to VIP Verified!' : 'VIP status removed.');
-      loadAdminDashboardData();
+    window.approveVipRequest = async function(reqKey, targetUid) {
+      await update(ref(db, `users/${targetUid}`), { isVip: true });
+      await update(ref(db, `vip_requests/${reqKey}`), { status: 'approved' });
+      alert('VIP badge approved successfully!');
+    };
+
+    window.rejectVipRequest = async function(reqKey) {
+      await update(ref(db, `vip_requests/${reqKey}`), { status: 'rejected' });
+      alert('VIP request rejected.');
+    };
+
+    function loadReportsQueue() {
+      onValue(ref(db, 'reports'), snap => {
+        const reps = snap.val();
+        const tbody = document.getElementById('admin-reports-table-body');
+        tbody.innerHTML = '';
+        if(reps) {
+          Object.keys(reps).forEach(rKey => {
+            const r = reps[rKey];
+            tbody.innerHTML += `
+              <tr>
+                <td>${rKey.substring(0,6)}...</td>
+                <td>${r.reporterUid}</td>
+                <td>${escapeHTML(r.reason)} <br><span style="font-size:0.7rem; color:var(--text-muted);">Target: ${r.targetUid}</span></td>
+                <td><button class="btn btn-sm btn-danger" onclick="dismissReport('${rKey}')">Dismiss</button></td>
+              </tr>`;
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No reported items. Clean queue!</td></tr>`;
+        }
+      });
+    }
+
+    window.dismissReport = async function(reportKey) {
+      await remove(ref(db, `reports/${reportKey}`));
+      alert('Report dismissed.');
+    };
+
+    async function loadAdminDashboardData() {
+      onValue(ref(db, 'users'), snap => {
+        const usersTable = document.getElementById('admin-users-table-body');
+        usersTable.innerHTML = '';
+        if(snap.exists()) {
+          const users = snap.val();
+          document.getElementById('stat-total-users').innerText = Object.keys(users).length;
+          Object.values(users).forEach(u => {
+            const isVip = u.isVip ? '<span style="color:var(--accent-badge);">⭐ VIP</span>' : 'Standard';
+            const roleStr = u.role === 'admin' ? '<span style="color:var(--primary);">Admin</span>' : 'User';
+            usersTable.innerHTML += `
+              <tr>
+                <td><strong>${escapeHTML(u.name || '')}</strong></td>
+                <td>@${escapeHTML(u.username || '')}</td>
+                <td>${escapeHTML(u.email || '')}</td>
+                <td>${roleStr} | ${isVip}</td>
+                <td>
+                  <button class="btn btn-sm" style="background:#3b82f6; margin-right:4px;" onclick="promoteUserRole('${u.uid}', '${u.role === 'admin' ? 'user' : 'admin'}')">${u.role === 'admin' ? 'Demote' : 'Make Admin'}</button>
+                  <button class="btn btn-sm btn-danger" onclick="banUserAccount('${u.uid}')">Ban</button>
+                </td>
+              </tr>`;
+          });
+        }
+      });
+
+      onValue(ref(db, 'groups'), snap => {
+        const groupsTable = document.getElementById('admin-groups-table-body');
+        groupsTable.innerHTML = '';
+        if(snap.exists()) {
+          const groups = snap.val();
+          document.getElementById('stat-total-groups').innerText = Object.keys(groups).length;
+          Object.values(groups).forEach(g => {
+            groupsTable.innerHTML += `
+              <tr>
+                <td>${g.id}</td>
+                <td><strong>${escapeHTML(g.name || '')}</strong></td>
+                <td>${g.ownerUid || 'N/A'}</td>
+                <td><button class="btn btn-sm btn-danger" onclick="deleteAdminGroup('${g.id}')">Delete</button></td>
+              </tr>`;
+          });
+        } else {
+          groupsTable.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No active groups found.</td></tr>`;
+        }
+      });
+    }
+
+    window.promoteUserRole = async function(uid, newRole) {
+      await update(ref(db, `users/${uid}`), { role: newRole });
+      alert(`User role updated to ${newRole}!`);
+    };
+
+    window.banUserAccount = async function(uid) {
+      if(confirm('Are you sure you want to ban this user?')) {
+        await set(ref(db, `bans/${uid}`), { banned: true });
+        alert('User has been banned.');
+      }
     };
 
     window.sendGlobalBroadcast = async function() {
@@ -385,21 +486,12 @@
       alert('Full Database backup downloaded successfully!');
     };
 
-    window.deleteUserAccount = async function(uid) {
-      if(confirm("Permanently delete this user?")) {
-        await remove(ref(db, `users/${uid}`));
-        alert("User deleted.");
-        loadAdminDashboardData();
-      }
-    };
-
     window.deleteAdminGroup = async function(groupId) {
       if(confirm("Permanently delete this secure group?")) {
         await remove(ref(db, `groups/${groupId}`));
         await remove(ref(db, `group_members/${groupId}`));
         await remove(ref(db, `group_messages/${groupId}`));
         alert("Group deleted.");
-        loadAdminDashboardData();
       }
     };
 
